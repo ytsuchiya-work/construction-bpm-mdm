@@ -398,43 +398,69 @@ export default function MasterDataPage() {
       )
     }
 
+    const keyCol = columns.find(c => c.is_required) || columns[0]
+    const keyValues = records.map(r => r.parsedData[keyCol?.name])
+    const seen = {}
+    const duplicateKeys = new Set()
+    keyValues.forEach(v => {
+      if (seen[v]) duplicateKeys.add(v)
+      seen[v] = true
+    })
+
     return (
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-auto max-h-[500px]">
           <table className="w-full text-sm border-collapse">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-2.5 font-semibold text-gray-600 bg-gray-50 sticky left-0 z-20 min-w-[160px] border-r border-gray-200">
-                  カラム名
+                <th className="text-center px-3 py-2.5 font-semibold text-gray-500 bg-gray-50 sticky left-0 z-20 w-[50px] border-r border-gray-200">
+                  #
                 </th>
-                {records.map((r, i) => (
-                  <th key={r.id || i} className="text-center px-3 py-2.5 font-semibold text-gray-600 bg-gray-50 min-w-[140px] border-r border-gray-100 last:border-r-0">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-blue-600">データ</span>
+                {columns.map(col => (
+                  <th key={col.id} className="text-left px-3 py-2.5 font-semibold text-gray-600 bg-gray-50 min-w-[120px] border-r border-gray-100 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <span>{col.name}</span>
+                      <span className="px-1 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px]">{col.column_type}</span>
+                      {col.is_required && <span className="text-red-500 text-[10px] font-bold">*</span>}
                     </div>
                   </th>
                 ))}
+                <th className="text-center px-3 py-2.5 font-semibold text-gray-600 bg-gray-50 min-w-[110px] whitespace-nowrap">
+                  重複チェック
+                </th>
               </tr>
             </thead>
             <tbody>
-              {columns.map((col, idx) => (
-                <tr key={col.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                  <td className="px-4 py-2 font-medium text-gray-800 bg-white sticky left-0 border-r border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <span>{col.name}</span>
-                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px]">{col.column_type}</span>
-                    </div>
-                  </td>
-                  {records.map((r, ri) => {
-                    const val = r.parsedData[col.name]
-                    return (
-                      <td key={ri} className="px-3 py-2 text-gray-700 text-xs border-r border-gray-100 last:border-r-0">
-                        {val !== undefined && val !== null && val !== '' ? String(val) : <span className="text-gray-300">—</span>}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
+              {records.map((r, idx) => {
+                const keyVal = r.parsedData[keyCol?.name]
+                const isDuplicate = duplicateKeys.has(keyVal)
+                return (
+                  <tr key={r.id || idx} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'} hover:bg-blue-50/30`}>
+                    <td className="px-3 py-2 text-center text-gray-400 font-mono text-xs bg-white sticky left-0 border-r border-gray-200">
+                      {idx + 1}
+                    </td>
+                    {columns.map(col => {
+                      const val = r.parsedData[col.name]
+                      return (
+                        <td key={col.id} className="px-3 py-2 text-gray-700 text-xs border-r border-gray-100">
+                          {val !== undefined && val !== null && val !== '' ? String(val) : <span className="text-gray-300">—</span>}
+                        </td>
+                      )
+                    })}
+                    <td className="px-3 py-2 text-center">
+                      {isDuplicate ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-medium">
+                          <XCircle size={12} /> 重複あり
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded-full text-xs font-medium">
+                          <CheckCircle2 size={12} /> ユニーク
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
